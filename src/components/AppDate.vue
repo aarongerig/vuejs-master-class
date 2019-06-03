@@ -14,7 +14,7 @@ export default {
     },
 
     diffForHumans (date) {
-      return distanceInWordsToNow(parse(date * 1000))
+      return `${distanceInWordsToNow(parse(date * 1000))} ago`
     }
   },
 
