@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
-import sourceData from '@/data'
+import firebase from 'firebase/app'
+import 'firebase/database'
 import { countObjectProperties } from '@/utils'
 
 Vue.use(Vuex)
@@ -16,13 +17,18 @@ const makeAppendChildToParentMutation = ({ parent, child }) =>
 
 export default new Vuex.Store({
   state: {
-    ...sourceData,
+    categories: {},
+    forums: {},
+    threads: {},
+    posts: {},
+    users: {},
     authId: 'u4r8XCziZEWEXsj2UIKNHBoDh0n2'
   },
 
   getters: {
     authUser (state) {
-      return state.users[state.authId]
+      // return state.users[state.authId]
+      return {}
     },
 
     threadRepliesCount: state => id => countObjectProperties(state.threads[id].posts) - 1,
@@ -40,6 +46,11 @@ export default new Vuex.Store({
     appendThreadToForum: makeAppendChildToParentMutation({ parent: 'forums', child: 'threads' }),
 
     appendThreadToUser: makeAppendChildToParentMutation({ parent: 'users', child: 'threads' }),
+
+    setItem (state, { resource, id, item }) {
+      item['.key'] = id
+      Vue.set(state[resource], id, item)
+    },
 
     setPost (state, { postId, post }) {
       Vue.set(state.posts, postId, post)
@@ -92,7 +103,6 @@ export default new Vuex.Store({
     updateThread ({ commit, dispatch, state }, { id, title, text }) {
       return new Promise((resolve) => {
         const thread = state.threads[id]
-
         const newThread = { ...thread, title }
 
         commit('setThread', { thread: newThread, threadId: id })
@@ -123,6 +133,80 @@ export default new Vuex.Store({
 
     updateUser ({ commit }, user) {
       commit('setUser', { userId: user['.key'], user })
+    },
+
+    fetchCategory ({ dispatch }, { id }) {
+      return dispatch('fetchItem', { resource: 'categories', id, emoji: '🏷' })
+    },
+
+    fetchForum ({ dispatch }, { id }) {
+      return dispatch('fetchItem', { resource: 'forums', id, emoji: '🌧' })
+    },
+
+    fetchThread ({ dispatch }, { id }) {
+      return dispatch('fetchItem', { resource: 'threads', id, emoji: '📄' })
+    },
+
+    fetchPost ({ dispatch }, { id }) {
+      return dispatch('fetchItem', { resource: 'posts', id, emoji: '💬' })
+    },
+
+    fetchUser ({ dispatch }, { id }) {
+      return dispatch('fetchItem', { resource: 'users', id, emoji: '🙋' })
+    },
+
+    fetchCategories (context, { ids }) {
+      return context.dispatch('fetchItems', { resource: 'categories', ids, emoji: '🏷' })
+    },
+
+    fetchForums ({ dispatch }, { ids }) {
+      return dispatch('fetchItems', { resource: 'forums', ids, emoji: '🌧' })
+    },
+
+    fetchThreads (context, { ids }) {
+      return context.dispatch('fetchItems', { resource: 'threads', ids, emoji: '🌧' })
+    },
+
+    fetchPosts (context, { ids }) {
+      return context.dispatch('fetchItems', { resource: 'posts', ids, emoji: '💬' })
+    },
+
+    fetchUsers (context, { ids }) {
+      return context.dispatch('fetchItems', { resource: 'users', ids, emoji: '🙋' })
+    },
+
+    fetchAllCategories ({ commit, state }) {
+      console.log('🔥‍', '🏷', 'all')
+
+      return new Promise((resolve) => {
+        firebase.database().ref('categories')
+          .once('value', snapshot => {
+            const categoriesObject = snapshot.val()
+            Object.keys(categoriesObject).forEach(categoryId => {
+              const category = categoriesObject[categoryId]
+              commit('setItem', { resource: 'categories', id: categoryId, item: category })
+              resolve(Object.values(state.categories))
+            })
+          })
+      })
+    },
+
+    fetchItem ({ commit, state }, { resource, id, emoji }) {
+      console.log('🔥‍', emoji, id)
+
+      return new Promise((resolve) => {
+        firebase.database().ref(resource).child(id)
+          .once('value', snapshot => {
+            commit('setItem', { resource, id: snapshot.key, item: snapshot.val() })
+            resolve(state[resource][id])
+          })
+      })
+    },
+
+    fetchItems ({ dispatch }, { resource, ids, emoji }) {
+      ids = Array.isArray(ids) ? ids : Object.keys(ids)
+
+      return Promise.all(ids.map(id => dispatch('fetchItem', { resource, id, emoji })))
     }
   }
 })

@@ -1,5 +1,8 @@
 <template>
-  <div class="col-large push-top">
+  <div
+    v-if="thread && user"
+    class="col-large push-top"
+  >
     <h1>
       {{ thread.title }}
       <router-link
@@ -30,6 +33,7 @@
 <script>
 import PostEditor from '@/components/PostEditor'
 import PostList from '@/components/PostList'
+import { countObjectProperties } from '@/utils'
 
 export default {
   name: 'ThreadShow',
@@ -56,12 +60,7 @@ export default {
     },
 
     contributorsCount () {
-      const replies = Object.keys(this.thread.posts)
-        .filter(postId => postId !== this.thread.firstPostId)
-        .map(postId => this.$store.state.posts[postId])
-      const userIds = replies.map(post => post.userId)
-
-      return userIds.filter((item, index) => index === userIds.indexOf(item)).length
+      return countObjectProperties(this.thread.contributors)
     },
 
     user () {
@@ -74,6 +73,19 @@ export default {
       return Object.values(this.$store.state.posts)
         .filter(post => postIds.includes(post['.key']))
     }
+  },
+
+  created () {
+    this.$store.dispatch('fetchThread', { id: this.id })
+      .then(thread => {
+        this.$store.dispatch('fetchUser', { id: thread.userId })
+        this.$store.dispatch('fetchPosts', { ids: thread.posts })
+          .then(posts => {
+            posts.forEach(post => {
+              this.$store.dispatch('fetchUser', { id: post.userId })
+            })
+          })
+      })
   }
 }
 </script>
