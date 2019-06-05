@@ -12,9 +12,18 @@
       />
     </div>
     <div class="form-actions">
-      <button class="btn-blue">
-        Submit post
-      </button>
+      <div class="btn-group">
+        <button
+          v-if="isUpdate"
+          class="btn btn-ghost"
+          @click.prevent="cancel"
+        >
+          Cancel
+        </button>
+        <button class="btn-blue">
+          {{ isUpdate ? 'Update' : 'Submit post' }}
+        </button>
+      </div>
     </div>
   </form>
 </template>
@@ -24,20 +33,57 @@ export default {
   name: 'PostEditor',
 
   props: {
+    post: {
+      type: Object,
+      default: null,
+      validator: obj => {
+        const keyIsValid = typeof obj['.key'] === 'string'
+        const textIsValid = typeof obj.text === 'string'
+        const valid = keyIsValid && textIsValid
+
+        if (!keyIsValid) {
+          console.error('😳 The post prop object must include a `.key` attribute.')
+        }
+
+        if (!textIsValid) {
+          console.error('😳 The post prop object must include a `text` attribute.')
+        }
+
+        return valid
+      }
+    },
+
     threadId: {
-      required: true,
-      type: String
+      type: String,
+      default: ''
     }
   },
 
   data () {
     return {
-      text: ''
+      text: this.post ? this.post.text : ''
+    }
+  },
+
+  computed: {
+    isUpdate () {
+      return !!this.post
     }
   },
 
   methods: {
+    cancel () {
+      this.$emit('cancel')
+    },
+
     save () {
+      this.persist()
+        .then(post => {
+          this.$emit('save', { post })
+        })
+    },
+
+    create () {
       const post = {
         text: this.text,
         threadId: this.threadId
@@ -45,8 +91,20 @@ export default {
 
       this.text = ''
 
-      this.$emit('save', { post })
-      this.$store.dispatch('createPost', post)
+      return this.$store.dispatch('createPost', post)
+    },
+
+    update () {
+      const payload = {
+        id: this.post['.key'],
+        text: this.text
+      }
+
+      return this.$store.dispatch('updatePost', payload)
+    },
+
+    persist () {
+      return this.isUpdate ? this.update() : this.create()
     }
   }
 }

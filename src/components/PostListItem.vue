@@ -17,27 +17,61 @@
       </a>
 
       <p class="desktop-only text-small">
+        {{ userThreadsCount }} threads
+      </p>
+      <p class="desktop-only text-small">
         {{ userPostsCount }} posts
       </p>
     </div>
 
     <div class="post-content">
-      <div>
-        {{ post.text }}
+      <template v-if="!editing">
+        <div>
+          {{ post.text }}
+        </div>
+        <a
+          href="#"
+          style="margin-left: auto;"
+          class="link-unstyled"
+          title="Make a change"
+          @click.prevent="editing = true"
+        >
+          <i class="fa fa-pencil" />
+        </a>
+      </template>
+      <div
+        v-else
+        class="post-editor-wrapper"
+      >
+        <post-editor
+          :post="post"
+          @cancel="editing = false"
+          @save="editing = false"
+        />
       </div>
     </div>
 
     <div class="post-date text-faded">
+      <div
+        v-if="post.edited"
+        class="edition-info"
+      >
+        edited
+      </div>
       <AppDate :timestamp="post.publishedAt" />
     </div>
   </div>
 </template>
 
 <script>
-import { countObjectProperties } from '@/utils'
+import PostEditor from './PostEditor'
 
 export default {
   name: 'PostListItem',
+
+  components: {
+    PostEditor
+  },
 
   props: {
     post: {
@@ -46,18 +80,28 @@ export default {
     }
   },
 
+  data () {
+    return {
+      editing: false
+    }
+  },
+
   computed: {
     user () {
       return this.$store.state.users[this.post.userId]
     },
 
+    userThreadsCount () {
+      return this.$store.getters.userThreadsCount(this.post.userId)
+    },
+
     userPostsCount () {
-      return countObjectProperties(this.user.posts)
+      return this.$store.getters.userPostsCount(this.post.userId)
     }
   }
 }
 </script>
 
 <style scoped>
-
+  .post-editor-wrapper { width: 100%; }
 </style>

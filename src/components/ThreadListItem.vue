@@ -35,8 +35,6 @@
 </template>
 
 <script>
-import { countObjectProperties } from '@/utils'
-
 export default {
   name: 'ThreadListItem',
 
@@ -49,7 +47,7 @@ export default {
 
   computed: {
     repliesCount () {
-      return countObjectProperties(this.thread.posts) - 1
+      return this.$store.getters.threadRepliesCount(this.thread['.key'])
     },
 
     user () {
