@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="thread && user"
+    v-if="asyncDataStatus_ready"
     class="col-large push-top"
   >
     <h1>
@@ -31,8 +31,10 @@
 </template>
 
 <script>
+import { mapActions } from 'vuex'
 import PostEditor from '@/components/PostEditor'
 import PostList from '@/components/PostList'
+import asyncDataStatus from '@/mixins/asyncDataStatus'
 import { countObjectProperties } from '@/utils'
 
 export default {
@@ -42,6 +44,8 @@ export default {
     PostEditor,
     PostList
   },
+
+  mixins: [asyncDataStatus],
 
   props: {
     id: {
@@ -76,16 +80,21 @@ export default {
   },
 
   created () {
-    this.$store.dispatch('fetchThread', { id: this.id })
+    this.fetchThread({ id: this.id })
       .then(thread => {
-        this.$store.dispatch('fetchUser', { id: thread.userId })
-        this.$store.dispatch('fetchPosts', { ids: thread.posts })
-          .then(posts => {
-            posts.forEach(post => {
-              this.$store.dispatch('fetchUser', { id: post.userId })
-            })
-          })
+        this.fetchUser({ id: thread.userId })
+        return this.fetchPosts({ ids: thread.posts })
       })
+      .then(posts => {
+        return Promise.all(posts.map(post => {
+          this.fetchUser({ id: post.userId })
+        }))
+      })
+      .then(() => { this.asyncDataStatus_fetched() })
+  },
+
+  methods: {
+    ...mapActions(['fetchPosts', 'fetchThread', 'fetchUser'])
   }
 }
 </script>
