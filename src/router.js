@@ -7,6 +7,7 @@ import ThreadShow from '@/views/ThreadShow'
 import ThreadCreate from '@/views/ThreadCreate'
 import ThreadEdit from '@/views/ThreadEdit'
 import Profile from '@/views/ProfileShow'
+import UserRegistration from '@/views/UserRegistration'
 import NotFound from '@/views/NotFound'
 
 Vue.use(Router)
@@ -61,6 +62,11 @@ export default new Router({
       name: 'ProfileEdit',
       component: Profile,
       props: { edit: true }
+    },
+    {
+      path: '/register',
+      name: 'UserRegistration',
+      component: UserRegistration
     },
     {
       path: '*',
