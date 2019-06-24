@@ -10,7 +10,7 @@
     "db:seed": "firebase database:set / src/data.json -y"
   },
   "dependencies": {
-    "core-js": "^2.6.5",
+    "core-js": "^3.1.4",
     "date-fns": "^1.30.1",
     "firebase": "^6.1.0",
     "nprogress": "^0.2.0",
