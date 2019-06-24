@@ -1,4 +1,5 @@
 import firebase from 'firebase/app'
+import 'firebase/auth'
 import 'firebase/database'
 
 export default {
@@ -12,6 +13,7 @@ export default {
     updates[`threads/${post.threadId}/posts/${postId}`] = postId
     updates[`threads/${post.threadId}/contributors/${post.userId}`] = post.userId
     updates[`users/${post.userId}/posts/${postId}`] = postId
+
     firebase.database().ref().update(updates)
       .then(() => {
         commit('setItem', { resource: 'posts', id: postId, item: post })
@@ -41,6 +43,7 @@ export default {
 
       updates[`posts/${postId}`] = post
       updates[`users/${userId}/posts/${postId}`] = postId
+
       firebase.database().ref().update(updates)
         .then(() => {
           // update thread
@@ -57,20 +60,58 @@ export default {
     })
   },
 
-  createUser ({ commit, state }, { email, name, username, avatar = null }) {
+  createUser ({ commit, state }, { id, email, name, username, avatar = null }) {
     return new Promise((resolve) => {
       const registeredAt = Math.floor(Date.now() / 1000)
       const usernameLower = username.toLowerCase()
       email = email.toLowerCase()
       const user = { avatar, email, name, username, usernameLower, registeredAt }
-      const userId = firebase.database().ref('users').push().key
 
-      firebase.database().ref('users').child(userId).set(user)
+      firebase.database().ref('users').child(id).set(user)
         .then(() => {
-          commit('setItem', { resource: 'users', id: userId, item: user })
-          resolve(state.users[userId])
+          commit('setItem', { resource: 'users', id, item: user })
+          resolve(state.users[id])
         })
     })
+  },
+
+  registerUserWithEmailAndPassword ({ dispatch }, { email, name, username, password, avatar = null }) {
+    return firebase.auth().createUserWithEmailAndPassword(email, password)
+      .then(({ user }) => {
+        return dispatch('createUser', { id: user.uid, email, name, username, password, avatar })
+      })
+      .then(() => dispatch('fetchAuthUser'))
+  },
+
+  signInWithEmailAndPassword (context, { email, password }) {
+    return firebase.auth().signInWithEmailAndPassword(email, password)
+  },
+
+  signInWithGoogle ({ dispatch }) {
+    const provider = new firebase.auth.GoogleAuthProvider()
+
+    return firebase.auth().signInWithPopup(provider)
+      .then(({ user }) => {
+        firebase.database().ref('users').child(user.uid).once('value', snapshot => {
+          if (!snapshot.exists()) {
+            return dispatch('createUser', {
+              id: user.uid,
+              name: user.displayName,
+              email: user.email,
+              username: user.email,
+              avatar: user.photoURL
+            })
+              .then(() => dispatch('fetchAuthUser'))
+          }
+        })
+      })
+  },
+
+  signOut ({ commit }) {
+    return firebase.auth().signOut()
+      .then(() => {
+        commit('setAuthId', null)
+      })
   },
 
   updateThread ({ commit, dispatch, state }, { id, title, text }) {
@@ -128,6 +169,24 @@ export default {
   fetchThreads: ({ dispatch }, { ids }) => dispatch('fetchItems', { resource: 'threads', ids, emoji: '🌧' }),
   fetchPosts: ({ dispatch }, { ids }) => dispatch('fetchItems', { resource: 'posts', ids, emoji: '💬' }),
   fetchUsers: ({ dispatch }, { ids }) => dispatch('fetchItems', { resource: 'users', ids, emoji: '🙋' }),
+
+  fetchAuthUser ({ dispatch, commit }) {
+    const userId = firebase.auth().currentUser.uid
+
+    return new Promise((resolve) => {
+      firebase.database().ref('users').child(userId).once('value', snapshot => {
+        if (snapshot.exists()) {
+          return dispatch('fetchUser', { id: userId })
+            .then(user => {
+              commit('setAuthId', userId)
+              resolve(user)
+            })
+        } else {
+          resolve(null)
+        }
+      })
+    })
+  },
 
   fetchAllCategories ({ commit, state }) {
     console.log('🔥‍', '🏷', 'all')

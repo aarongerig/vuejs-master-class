@@ -22,12 +22,9 @@
 
     <!-- use .navbar-open to open nav -->
     <nav class="navbar">
-      <ul>
-        <li
-          v-if="user"
-          class="navbar-user"
-        >
-          <router-link :to="{ name: 'Profile' }">
+      <ul v-if="user">
+        <li class="navbar-user">
+          <a @click.prevent="userDropdownOpen = !userDropdownOpen">
             <img
               class="avatar-small"
               :src="user.avatar"
@@ -41,21 +38,39 @@
                 alt=""
               >
             </span>
-          </router-link>
+          </a>
 
           <!-- dropdown menu -->
           <!-- add class "active-drop" to show the dropdown -->
-          <div id="user-dropdown">
+          <div
+            id="user-dropdown"
+            :class="{ 'active-drop': userDropdownOpen }"
+          >
             <div class="triangle-drop" />
             <ul class="dropdown-menu">
               <li class="dropdown-menu-item">
-                <a href="profile.html">View profile</a>
+                <router-link :to="{ name: 'Profile' }">
+                  View profile
+                </router-link>
               </li>
               <li class="dropdown-menu-item">
-                <a href="#">Log out</a>
+                <a @click.prevent="$store.dispatch('signOut')">Sign out</a>
               </li>
             </ul>
           </div>
+        </li>
+      </ul>
+
+      <ul v-else>
+        <li class="navbar-item">
+          <router-link :to="{ name: 'UserSignIn' }">
+            Sign In
+          </router-link>
+        </li>
+        <li class="navbar-item">
+          <router-link :to="{ name: 'UserRegistration' }">
+            Register
+          </router-link>
         </li>
       </ul>
 
@@ -77,7 +92,7 @@
           <a href="#">My Profile</a>
         </li>
         <li class="navbar-item mobile-only">
-          <a href="#">Logout</a>
+          <a @click.prevent="$store.dispatch('signOut')">Sign out</a>
         </li>
       </ul>
     </nav>
@@ -89,6 +104,12 @@ import { mapGetters } from 'vuex'
 
 export default {
   name: 'TheNavbar',
+
+  data () {
+    return {
+      userDropdownOpen: false
+    }
+  },
 
   computed: {
     ...mapGetters({

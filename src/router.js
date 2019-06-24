@@ -8,6 +8,7 @@ import ThreadCreate from '@/views/ThreadCreate'
 import ThreadEdit from '@/views/ThreadEdit'
 import Profile from '@/views/ProfileShow'
 import UserRegistration from '@/views/UserRegistration'
+import UserSignIn from '@/views/UserSignIn'
 import NotFound from '@/views/NotFound'
 
 Vue.use(Router)
@@ -67,6 +68,11 @@ export default new Router({
       path: '/register',
       name: 'UserRegistration',
       component: UserRegistration
+    },
+    {
+      path: '/sign-in',
+      name: 'UserSignIn',
+      component: UserSignIn
     },
     {
       path: '*',
