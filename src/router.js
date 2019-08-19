@@ -10,10 +10,11 @@ import Profile from '@/views/ProfileShow'
 import UserRegistration from '@/views/UserRegistration'
 import UserSignIn from '@/views/UserSignIn'
 import NotFound from '@/views/NotFound'
+import store from '@/store'
 
 Vue.use(Router)
 
-export default new Router({
+const router = new Router({
   mode: 'history',
   base: process.env.BASE_URL,
   routes: [
@@ -38,7 +39,8 @@ export default new Router({
       path: '/thread/create/:forumId',
       name: 'ThreadCreate',
       component: ThreadCreate,
-      props: true
+      props: true,
+      meta: { requiresAuth: true }
     },
     {
       path: '/thread/:id',
@@ -50,29 +52,43 @@ export default new Router({
       path: '/thread/:id/edit',
       name: 'ThreadEdit',
       component: ThreadEdit,
-      props: true
+      props: true,
+      meta: { requiresAuth: true }
     },
     {
       path: '/me',
       name: 'Profile',
       component: Profile,
-      props: true
+      props: true,
+      meta: { requiresAuth: true }
     },
     {
       path: '/me/edit',
       name: 'ProfileEdit',
       component: Profile,
-      props: { edit: true }
+      props: { edit: true },
+      meta: { requiresAuth: true }
     },
     {
       path: '/register',
       name: 'UserRegistration',
-      component: UserRegistration
+      component: UserRegistration,
+      meta: { requiresGuest: true }
     },
     {
       path: '/sign-in',
       name: 'UserSignIn',
-      component: UserSignIn
+      component: UserSignIn,
+      meta: { requiresGuest: true }
+    },
+    {
+      path: '/sign-out',
+      name: 'UserSignOut',
+      meta: { requiresAuth: true },
+      beforeEnter (to, from, next) {
+        store.dispatch('signOut')
+          .then(() => next({ name: 'Home' }))
+      }
     },
     {
       path: '*',
@@ -81,3 +97,27 @@ export default new Router({
     }
   ]
 })
+
+router.beforeEach((to, from, next) => {
+  console.log(`🚦 navigating to ${to.name} from ${from.name}`)
+  store.dispatch('initAuthentication')
+    .then(user => {
+      if (to.matched.some(route => route.meta.requiresAuth)) {
+        if (user) {
+          next()
+        } else {
+          next({ name: 'UserSignIn', query: { redirectTo: to.path } })
+        }
+      } else if (to.matched.some(route => route.meta.requiresGuest)) {
+        if (!user) {
+          next()
+        } else {
+          next({ name: 'Home' })
+        }
+      } else {
+        next()
+      }
+    })
+})
+
+export default router

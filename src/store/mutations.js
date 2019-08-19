@@ -36,6 +36,10 @@ export default {
     Vue.set(state.threads, threadId, thread)
   },
 
+  setUnsubscribeAuthObserver (state, unsubscribe) {
+    state.unsubscribeAuthObserver = unsubscribe
+  },
+
   setUser (state, { userId, user }) {
     Vue.set(state.users, userId, user)
   }

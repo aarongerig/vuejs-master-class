@@ -1,6 +1,7 @@
 import firebase from 'firebase/app'
 import 'firebase/auth'
 import 'firebase/database'
+import { removeEmptyProperties } from '@/utils'
 
 export default {
   createPost ({ commit, state }, post) {
@@ -72,6 +73,25 @@ export default {
           commit('setItem', { resource: 'users', id, item: user })
           resolve(state.users[id])
         })
+    })
+  },
+
+  initAuthentication ({ commit, dispatch, state }) {
+    return new Promise((resolve) => {
+      if (state.unsubscribeAuthObserver) {
+        state.unsubscribeAuthObserver()
+      }
+
+      const unsubscribe = firebase.auth().onAuthStateChanged(user => {
+        console.log('👣 the user has changed')
+        if (user) {
+          dispatch('fetchAuthUser')
+            .then(dbUser => resolve(dbUser))
+        } else {
+          resolve(null)
+        }
+      })
+      commit('setUnsubscribeAuthObserver', unsubscribe)
     })
   },
 
@@ -155,7 +175,23 @@ export default {
   },
 
   updateUser ({ commit }, user) {
-    commit('setUser', { userId: user['.key'], user })
+    const updates = {
+      avatar: user.avatar,
+      username: user.username,
+      name: user.name,
+      bio: user.bio,
+      website: user.website,
+      email: user.email,
+      location: user.location
+    }
+
+    return new Promise((resolve) => {
+      firebase.database().ref('users').child(user['.key']).update(removeEmptyProperties(updates))
+        .then(() => {
+          commit('setUser', { userId: user['.key'], user })
+          resolve(user)
+        })
+    })
   },
 
   fetchCategory: ({ dispatch }, { id }) => dispatch('fetchItem', { resource: 'categories', id, emoji: '🏷' }),

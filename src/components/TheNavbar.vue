@@ -76,7 +76,9 @@
 
       <ul>
         <li class="navbar-item">
-          <a href="#">Home</a>
+          <router-link :to="{ name: 'Home' }">
+            Home
+          </router-link>
         </li>
         <li class="navbar-item">
           <a href="#">Category</a>

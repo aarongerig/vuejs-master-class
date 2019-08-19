@@ -5,6 +5,7 @@
     <div class="container">
       <router-view
         v-show="showPage"
+        :key="$route.path"
         @ready="pageReady"
       />
       <AppSpinner v-show="!showPage" />

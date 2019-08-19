@@ -26,12 +26,27 @@
       </span>
     </p>
     <PostList :posts="posts" />
-    <PostEditor :thread-id="id" />
+    <PostEditor
+      v-if="authUser"
+      :thread-id="id"
+    />
+    <div
+      v-else
+      class="text-center"
+      style="margin-bottom: 50px"
+    >
+      <router-link :to="{ name: 'UserSignIn', query: { redirectTo: $route.path } }">
+        Sign in
+      </router-link> or
+      <router-link :to="{ name: 'UserRegistration', query: { redirectTo: $route.path } }">
+        register
+      </router-link> to post a reply.
+    </div>
   </div>
 </template>
 
 <script>
-import { mapActions } from 'vuex'
+import { mapActions, mapGetters } from 'vuex'
 import PostEditor from '@/components/PostEditor'
 import PostList from '@/components/PostList'
 import asyncDataStatus from '@/mixins/asyncDataStatus'
@@ -55,6 +70,10 @@ export default {
   },
 
   computed: {
+    ...mapGetters({
+      authUser: 'authUser'
+    }),
+
     thread () {
       return this.$store.state.threads[this.id]
     },
