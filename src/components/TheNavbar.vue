@@ -54,7 +54,7 @@
                 </router-link>
               </li>
               <li class="dropdown-menu-item">
-                <a @click.prevent="$store.dispatch('signOut')">Sign out</a>
+                <a @click.prevent="$store.dispatch('auth/signOut')">Sign out</a>
               </li>
             </ul>
           </div>
@@ -94,7 +94,7 @@
           <a href="#">My Profile</a>
         </li>
         <li class="navbar-item mobile-only">
-          <a @click.prevent="$store.dispatch('signOut')">Sign out</a>
+          <a @click.prevent="$store.dispatch('auth/signOut')">Sign out</a>
         </li>
       </ul>
     </nav>
@@ -114,7 +114,7 @@ export default {
   },
 
   computed: {
-    ...mapGetters({
+    ...mapGetters('auth', {
       user: 'authUser'
     })
   }

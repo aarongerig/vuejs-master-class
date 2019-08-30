@@ -29,6 +29,8 @@
 </template>
 
 <script>
+import { mapActions } from 'vuex'
+
 export default {
   name: 'PostEditor',
 
@@ -72,6 +74,8 @@ export default {
   },
 
   methods: {
+    ...mapActions('posts', ['createPost', 'updatePost']),
+
     cancel () {
       this.$emit('cancel')
     },
@@ -91,7 +95,7 @@ export default {
 
       this.text = ''
 
-      return this.$store.dispatch('createPost', post)
+      return this.createPost(post)
     },
 
     update () {
@@ -100,7 +104,7 @@ export default {
         text: this.text
       }
 
-      return this.$store.dispatch('updatePost', payload)
+      return this.updatePost(payload)
     },
 
     persist () {

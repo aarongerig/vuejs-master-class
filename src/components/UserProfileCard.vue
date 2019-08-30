@@ -18,7 +18,7 @@
       </p>
 
       <p class="text-justify">
-        <span v-if="user.bio">{{ user-bio }}</span>
+        <span v-if="user.bio">{{ user.bio }}</span>
         <span v-else>No bio specified.</span>
       </p>
 
@@ -68,11 +68,11 @@ export default {
 
   computed: {
     userPostsCount () {
-      return this.$store.getters.userPostsCount(this.user['.key'])
+      return this.$store.getters['users/userPostsCount'](this.user['.key'])
     },
 
     userThreadsCount () {
-      return this.$store.getters.userThreadsCount(this.user['.key'])
+      return this.$store.getters['users/userThreadsCount'](this.user['.key'])
     }
   }
 }
