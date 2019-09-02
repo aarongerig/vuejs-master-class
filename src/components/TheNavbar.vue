@@ -1,6 +1,8 @@
 <template>
   <header
     id="header"
+    v-click-outside="closeMobileNavbar"
+    v-handle-scroll="closeMobileNavbar"
     class="header"
   >
     <router-link
@@ -13,17 +15,24 @@
       >
     </router-link>
 
-    <div class="btn-hamburger">
-      <!-- use .btn-humburger-active to open the menu -->
+    <div
+      class="btn-hamburger"
+      @click="mobileNavOpen = !mobileNavOpen"
+    >
       <div class="top bar" />
       <div class="middle bar" />
       <div class="bottom bar" />
     </div>
 
-    <!-- use .navbar-open to open nav -->
-    <nav class="navbar">
+    <nav
+      class="navbar"
+      :class="{ 'navbar-open': mobileNavOpen }"
+    >
       <ul v-if="user">
-        <li class="navbar-user">
+        <li
+          v-click-outside="closeUserDropdown"
+          class="navbar-user"
+        >
           <a @click.prevent="userDropdownOpen = !userDropdownOpen">
             <img
               class="avatar-small"
@@ -41,7 +50,6 @@
           </a>
 
           <!-- dropdown menu -->
-          <!-- add class "active-drop" to show the dropdown -->
           <div
             id="user-dropdown"
             :class="{ 'active-drop': userDropdownOpen }"
@@ -50,7 +58,7 @@
             <ul class="dropdown-menu">
               <li class="dropdown-menu-item">
                 <router-link :to="{ name: 'Profile' }">
-                  View profile
+                  View Profile
                 </router-link>
               </li>
               <li class="dropdown-menu-item">
@@ -58,6 +66,16 @@
               </li>
             </ul>
           </div>
+        </li>
+        <li class="navbar-item mobile-only">
+          <router-link :to="{ name: 'Profile' }">
+            View Profile
+          </router-link>
+        </li>
+        <li class="navbar-item mobile-only">
+          <a @click.prevent="$store.dispatch('auth/signOut')">
+            Sign Out
+          </a>
         </li>
       </ul>
 
@@ -73,42 +91,26 @@
           </router-link>
         </li>
       </ul>
-
-      <ul>
-        <li class="navbar-item">
-          <router-link :to="{ name: 'Home' }">
-            Home
-          </router-link>
-        </li>
-        <li class="navbar-item">
-          <a href="#">Category</a>
-        </li>
-        <li class="navbar-item">
-          <a href="#">Forum</a>
-        </li>
-        <li class="navbar-item">
-          <a href="#">Thread</a>
-        </li>
-        <!-- Show these option only on mobile-->
-        <li class="navbar-item mobile-only">
-          <a href="#">My Profile</a>
-        </li>
-        <li class="navbar-item mobile-only">
-          <a @click.prevent="$store.dispatch('auth/signOut')">Sign out</a>
-        </li>
-      </ul>
     </nav>
   </header>
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
+import clickOutside from '@/directives/click-outside'
+import handleScroll from '@/directives/handle-scroll'
 
 export default {
   name: 'TheNavbar',
 
+  directives: {
+    clickOutside,
+    handleScroll
+  },
+
   data () {
     return {
+      mobileNavOpen: false,
       userDropdownOpen: false
     }
   },
@@ -117,6 +119,16 @@ export default {
     ...mapGetters('auth', {
       user: 'authUser'
     })
+  },
+
+  methods: {
+    closeMobileNavbar () {
+      this.mobileNavOpen = false
+    },
+
+    closeUserDropdown () {
+      this.userDropdownOpen = false
+    }
   }
 }
 </script>
