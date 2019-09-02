@@ -16,7 +16,18 @@
             v-model="form.email"
             type="text"
             class="form-input"
+            @blur="$v.form.email.$touch()"
           >
+          <template v-if="$v.form.email.$error">
+            <span
+              v-if="!$v.form.email.required"
+              class="form-error"
+            >This field is required</span>
+            <span
+              v-else-if="!$v.form.email.email"
+              class="form-error"
+            >This is not a valid email address</span>
+          </template>
         </div>
         <div class="form-group">
           <label for="password">Password</label>
@@ -25,7 +36,18 @@
             v-model="form.password"
             type="password"
             class="form-input"
+            @blur="$v.form.password.$touch()"
           >
+          <template v-if="$v.form.password.$error">
+            <span
+              v-if="!$v.form.password.required"
+              class="form-error"
+            >This field is required</span>
+            <span
+              v-else-if="!$v.form.password.minLength"
+              class="form-error"
+            >The password must be at least 6 characters long</span>
+          </template>
         </div>
 
         <div class="push-top">
@@ -58,6 +80,8 @@
 </template>
 
 <script>
+import { email, minLength, required } from 'vuelidate/lib/validators'
+
 export default {
   name: 'UserSignIn',
 
@@ -70,12 +94,25 @@ export default {
     }
   },
 
+  validations: {
+    form: {
+      email: { email, required },
+      password: { minLength: minLength(6), required }
+    }
+  },
+
   created () {
     this.$emit('ready')
   },
 
   methods: {
     signIn () {
+      this.$v.form.$touch()
+
+      if (this.$v.form.$invalid) {
+        return
+      }
+
       this.$store.dispatch('auth/signInWithEmailAndPassword', {
         email: this.form.email,
         password: this.form.password

@@ -87,7 +87,7 @@
               class="form-error"
             >This field is required</span>
             <span
-              v-else-if="!$v.form.email.minLength"
+              v-else-if="!$v.form.password.minLength"
               class="form-error"
             >The password must be at least 6 characters long</span>
           </template>
@@ -97,7 +97,7 @@
           <label for="avatar">Avatar</label>
           <input
             id="avatar"
-            v-model="form.avatar"
+            v-model.lazy="form.avatar"
             type="text"
             class="form-input"
             @blur="$v.form.avatar.$touch()"
@@ -106,7 +106,15 @@
             <span
               v-if="!$v.form.avatar.url"
               class="form-error"
-            >This is not a valid url</span>
+            >The supplied URL is invalid</span>
+            <span
+              v-else-if="!$v.form.avatar.supportedImageFile"
+              class="form-error"
+            >This file type is not supported by our system. Supported file types: .jpg, .jpeg, .gif, .png, .svg</span>
+            <span
+              v-else-if="!$v.form.avatar.responseOk"
+              class="form-error"
+            >The supplied image cannot be found</span>
           </template>
         </div>
 
@@ -129,15 +137,18 @@
 </template>
 
 <script>
-import firebase from 'firebase/app'
-import 'firebase/database'
 import {
   email,
-  helpers as vuelidateHelpers,
   minLength,
   required,
   url
 } from 'vuelidate/lib/validators'
+import {
+  responseOk,
+  supportedImageFile,
+  uniqueEmail,
+  uniqueUsername
+} from '@/utils/validators'
 
 export default {
   name: 'UserRegistration',
@@ -157,35 +168,10 @@ export default {
   validations: {
     form: {
       name: { required },
-      username: {
-        required,
-        unique (value) {
-          if (!vuelidateHelpers.req(value)) {
-            return true
-          }
-
-          return new Promise((resolve) => {
-            firebase.database().ref('users').orderByChild('usernameLower').equalTo(value.toLowerCase())
-              .once('value', snapshot => resolve(!snapshot.exists()))
-          })
-        }
-      },
-      email: {
-        email,
-        required,
-        unique (value) {
-          if (!vuelidateHelpers.req(value)) {
-            return true
-          }
-
-          return new Promise((resolve) => {
-            firebase.database().ref('users').orderByChild('email').equalTo(value.toLowerCase())
-              .once('value', snapshot => resolve(!snapshot.exists()))
-          })
-        }
-      },
+      username: { required, unique: uniqueUsername },
+      email: { email, required, unique: uniqueEmail },
       password: { minLength: minLength(6), required },
-      avatar: { url }
+      avatar: { responseOk, supportedImageFile, url }
     }
   },
 

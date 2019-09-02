@@ -11,12 +11,23 @@
 
       <div class="form-group">
         <input
-          v-model="activeUser.username"
+          v-model.lazy="activeUser.username"
           type="text"
           placeholder="Username"
           class="form-input text-lead text-bold"
           aria-label="Username"
+          @blur="$v.activeUser.username.$touch()"
         >
+        <template v-if="$v.activeUser.username.$error">
+          <span
+            v-if="!$v.activeUser.username.required"
+            class="form-error"
+          >This field is required</span>
+          <span
+            v-else-if="!$v.activeUser.username.unique"
+            class="form-error"
+          >Sorry! This username is taken</span>
+        </template>
       </div>
 
       <div class="form-group">
@@ -26,7 +37,14 @@
           placeholder="Full Name"
           class="form-input text-lead"
           aria-label="Full Name"
+          @blur="$v.activeUser.name.$touch()"
         >
+        <template v-if="$v.activeUser.name.$error">
+          <span
+            v-if="!$v.activeUser.name.required"
+            class="form-error"
+          >This field is required</span>
+        </template>
       </div>
 
       <div class="form-group">
@@ -70,10 +88,25 @@
         </label>
         <input
           id="user_email"
-          v-model="activeUser.email"
+          v-model.lazy="activeUser.email"
           class="form-input"
           autocomplete="off"
+          @blur="$v.activeUser.email.$touch()"
         >
+        <template v-if="$v.activeUser.email.$error">
+          <span
+            v-if="!$v.activeUser.email.required"
+            class="form-error"
+          >This field is required</span>
+          <span
+            v-else-if="!$v.activeUser.email.email"
+            class="form-error"
+          >This is not a valid email address</span>
+          <span
+            v-else-if="!$v.activeUser.email.unique"
+            class="form-error"
+          >Sorry! This email is taken</span>
+        </template>
       </div>
 
       <div class="form-group">
@@ -116,6 +149,8 @@
 </template>
 
 <script>
+import { email, required } from 'vuelidate/lib/validators'
+import { uniqueEmail, uniqueUsername } from '@/utils/validators'
 export default {
   name: 'UserProfileCardEditor',
 
@@ -142,12 +177,45 @@ export default {
     }
   },
 
+  validations: {
+    activeUser: {
+      name: { required },
+      username: {
+        required,
+        unique (value) {
+          if (value.toLowerCase() === this.user.usernameLower) {
+            return true
+          }
+
+          return uniqueUsername(value)
+        }
+      },
+      email: {
+        email,
+        required,
+        unique (value) {
+          if (value.toLowerCase() === this.user.email) {
+            return true
+          }
+
+          return uniqueEmail(value)
+        }
+      }
+    }
+  },
+
   methods: {
     cancel () {
       this.$router.push({ name: 'Profile' })
     },
 
     save () {
+      this.$v.activeUser.$touch()
+
+      if (this.$v.activeUser.$invalid) {
+        return
+      }
+
       this.$store.dispatch('users/updateUser', { ...this.activeUser })
       this.$router.push({ name: 'Profile' })
     }
